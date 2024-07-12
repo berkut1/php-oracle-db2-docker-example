@@ -1,0 +1,27 @@
+services:
+    example-php-cli:
+        build:
+            context: ./docker/development
+            dockerfile: php-cli.docker
+        volumes:
+            - ./:/app
+            - composer:/root/.composer/cache
+        environment:
+            PHP_IDE_CONFIG: "serverName=DockerTest"
+        depends_on:
+            - example-db2
+    example-db2:
+        image: ibmcom/db2:11.5.0.0
+        privileged: true
+        environment:
+            LICENSE: accept
+            DB2INSTANCE: db2inst1
+            DB2INST1_PASSWORD: password
+            DBNAME: app_db
+        ports:
+            - "50000:50000"
+        volumes:
+            - example-db2:/var/ibm/db2
+volumes:
+    example-db2:
+    composer:

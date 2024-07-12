@@ -1,0 +1,25 @@
+services:
+    example-php-cli:
+        build:
+            context: ./docker/development
+            dockerfile: php-cli.docker
+        volumes:
+            - ./:/app
+            - composer:/root/.composer/cache
+        environment:
+            PHP_IDE_CONFIG: "serverName=DockerTest"
+        depends_on:
+            - example-oracle
+    example-oracle:
+        image: gvenzl/oracle-free:23-slim
+        ports:
+            - "1521:1521"
+        environment:
+            ORACLE_PASSWORD: password
+            APP_USER: app_user
+            APP_USER_PASSWORD: password
+        volumes:
+            - example-oracle:/opt/oracle/oradata
+volumes:
+    example-oracle:
+    composer:

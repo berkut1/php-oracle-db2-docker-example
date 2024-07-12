@@ -1,0 +1,25 @@
+FROM php:8.3-cli
+
+RUN apt-get update && apt-get install -y unixodbc-dev unzip
+
+# add IBM clidriver path to environment
+ENV IBM_DB_HOME /opt/ibm/clidriver
+ENV LD_LIBRARY_PATH $IBM_DB_HOME/lib
+
+# Install IBM clidriver
+RUN mkdir /opt/ibm
+COPY ./php/linuxx64_odbc_cli.tar.gz /opt/ibm/
+RUN cd /opt/ibm && tar -xvf linuxx64_odbc_cli.tar.gz
+
+# Install
+RUN pecl install ibm_db2 \
+    && pecl install xdebug \
+    && docker-php-ext-enable ibm_db2 xdebug
+
+COPY ./php/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/bin --filename=composer --quiet
+
+ENV COMPOSER_ALLOW_SUPERUSER 1
+
+WORKDIR /app

@@ -1,0 +1,41 @@
+FROM php:8.3-cli
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    unzip \
+    libaio1 \
+    libaio-dev
+
+# Install Oracle Instantclient thanks -> https://stackoverflow.com/questions/72592165/install-and-enable-oci8-extension-for-php8-1-fpm-in-dockerfile
+RUN mkdir /opt/oracle
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/216000/instantclient-basic-linux.x64-21.6.0.0.0dbru.zip \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/216000/instantclient-sdk-linux.x64-21.6.0.0.0dbru.zip \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/216000/instantclient-sqlplus-linux.x64-21.6.0.0.0dbru.zip \
+    && unzip instantclient-basic-linux.x64-21.6.0.0.0dbru.zip -d /opt/oracle \
+    && unzip instantclient-sdk-linux.x64-21.6.0.0.0dbru.zip -d /opt/oracle \
+    && unzip instantclient-sqlplus-linux.x64-21.6.0.0.0dbru.zip -d /opt/oracle \
+    && rm -rf *.zip \
+    && mv /opt/oracle/instantclient_21_6 /opt/oracle/instantclient
+
+# Add oracle instantclient path to environment
+ENV LD_LIBRARY_PATH /opt/oracle/instantclient/
+RUN ldconfig
+
+# Install Oracle extensions
+RUN docker-php-ext-configure pdo_oci --with-pdo-oci=instantclient,/opt/oracle/instantclient,21.1 \
+    && echo 'instantclient,/opt/oracle/instantclient/' | pecl install oci8 \
+    && docker-php-ext-install pdo_oci \
+    && docker-php-ext-enable oci8
+
+# xdebug
+RUN apt-get update && apt-get install -y libpq-dev \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug
+
+COPY ./php/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/bin --filename=composer --quiet
+
+ENV COMPOSER_ALLOW_SUPERUSER 1
+
+WORKDIR /app
